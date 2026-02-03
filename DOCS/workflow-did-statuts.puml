@@ -1,0 +1,64 @@
+@startuml workflow-did-statuts
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Cycle de Vie d'un DID (Statuts)
+
+[*] --> Commande : Nouveau numéro\ncommandé
+
+state Commande #Orange {
+    Commande : En cours de commande
+    Commande : auprès de l'opérateur
+}
+
+state Disponible #LightBlue {
+    Disponible : Numéro reçu
+    Disponible : Non affecté à
+    Disponible : une campagne
+}
+
+state Affecte #Yellow {
+    Affecte : Attribué à un client
+    Affecte : Non utilisé
+    Affecte : actuellement
+}
+
+state Utilise #LightGreen {
+    Utilise : En production
+    Utilise : active
+}
+
+state Resilie #Pink {
+    Resilie : Numéro libéré
+    Resilie : ou résilié
+}
+
+Commande --> Disponible : Livraison\nopérateur
+Commande --> Resilie : Échec\ncommande
+
+Disponible --> Affecte : Affectation\nclient
+Disponible --> Resilie : Résiliation
+
+Affecte --> Utilise : Mise en\nproduction
+Affecte --> Disponible : Retrait\naffectation
+Affecte --> Resilie : Résiliation
+
+Utilise --> Affecte : Arrêt\nproduction
+Utilise --> Disponible : Libération\ncomplète
+Utilise --> Resilie : Résiliation
+
+Resilie --> Disponible : Réactivation\n(rare)
+Resilie --> [*]
+
+note right of Utilise
+  DID affecté à une
+  campagne Hermes via
+  DID_VIRTUAL
+end note
+
+note left of Disponible
+  Visible dans l'interface
+  pour affectation rapide
+end note
+
+@enduml

@@ -1,0 +1,67 @@
+@startuml workflow-commande
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Workflow de Commande de SDA
+
+[*] --> Brouillon : Création
+
+state Brouillon #LightGray {
+    Brouillon : Demande en cours de rédaction
+    Brouillon : - Sélection type DID
+    Brouillon : - Sélection région
+    Brouillon : - Quantité souhaitée
+}
+
+state Soumise #LightBlue {
+    Soumise : En attente de validation
+    Soumise : par le responsable
+}
+
+state Validee #Blue {
+    Validee : Demande approuvée
+    Validee : Prête pour transmission
+}
+
+state EnCours #Orange {
+    EnCours : Commande transmise
+    EnCours : à l'opérateur
+}
+
+state Livree #LightGreen {
+    Livree : Numéros reçus
+    Livree : et configurés
+}
+
+state Rejetee #Pink {
+    Rejetee : Demande refusée
+    Rejetee : Motif indiqué
+}
+
+state Annulee #Gray {
+    Annulee : Annulée par
+    Annulee : le demandeur
+}
+
+Brouillon --> Soumise : Soumettre
+Brouillon --> Annulee : Annuler
+
+Soumise --> Validee : Valider
+Soumise --> Rejetee : Rejeter
+
+Validee --> EnCours : Commander\nchez opérateur
+
+EnCours --> Livree : Réception\ndes numéros
+
+Livree --> [*]
+Rejetee --> [*]
+Annulee --> [*]
+
+note right of Livree
+  Les DID livrés sont
+  automatiquement créés
+  avec statut "Commandé"
+  puis passent à "Disponible"
+end note
+
+@enduml

@@ -1,0 +1,84 @@
+@startuml usecase-gestion-did
+!theme plain
+skinparam backgroundColor #FEFEFE
+left to right direction
+
+title Cas d'Utilisation - Gestion des DID
+
+actor "Administrateur\nFimainfo" as Admin
+actor "Client" as Client
+actor "Système\nHermes" as Hermes
+
+rectangle "Gestion des DID" {
+    usecase "Consulter inventaire DID" as UC1
+    usecase "Ajouter un DID" as UC2
+    usecase "Modifier un DID" as UC3
+    usecase "Changer statut DID" as UC4
+    usecase "Affecter DID à client" as UC5
+    usecase "Rechercher DID" as UC6
+    usecase "Exporter liste DID" as UC7
+}
+
+rectangle "Gestion des Campagnes" {
+    usecase "Affecter DID à campagne" as UC10
+    usecase "Configurer DID (JSON)" as UC11
+    usecase "Retirer DID de campagne" as UC12
+    usecase "Voir DID par campagne" as UC13
+}
+
+rectangle "Commande de SDA" {
+    usecase "Créer demande commande" as UC20
+    usecase "Soumettre demande" as UC21
+    usecase "Valider demande" as UC22
+    usecase "Rejeter demande" as UC23
+    usecase "Saisir livraison" as UC24
+    usecase "Suivre commande" as UC25
+}
+
+rectangle "Reporting" {
+    usecase "Voir statistiques" as UC30
+    usecase "Consulter historique" as UC31
+    usecase "Générer rapport" as UC32
+}
+
+' Admin - Gestion DID
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+Admin --> UC6
+Admin --> UC7
+
+' Admin - Campagnes
+Admin --> UC10
+Admin --> UC11
+Admin --> UC12
+Admin --> UC13
+
+' Admin - Commandes
+Admin --> UC22
+Admin --> UC23
+Admin --> UC24
+
+' Admin - Reporting
+Admin --> UC30
+Admin --> UC31
+Admin --> UC32
+
+' Client
+Client --> UC1 : (vue limitée)
+Client --> UC20
+Client --> UC21
+Client --> UC25
+
+' Hermes
+UC10 ..> Hermes : <<configure>>
+UC11 ..> Hermes : <<configure>>
+UC12 ..> Hermes : <<configure>>
+
+' Relations
+UC21 ..> UC20 : <<include>>
+UC24 ..> UC2 : <<include>>
+
+@enduml

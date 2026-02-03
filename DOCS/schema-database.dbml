@@ -1,0 +1,398 @@
+// =============================================================================
+// SCHEMA DBML - Gestion Centralisée des DID
+// Base: FIMLONSQL2.HN_FIMAINFO_CONFIG
+// Date: 03 février 2026
+// =============================================================================
+// Visualiser sur: https://dbdiagram.io/d
+// =============================================================================
+
+Project GestionDID {
+  database_type: 'SQL Server'
+  Note: 'Système de gestion centralisée des numéros DID Fimainfo'
+}
+
+// =============================================================================
+// TABLES DE RÉFÉRENCE
+// =============================================================================
+
+Table TEL_INDICATIF {
+  id int [pk, increment]
+  code varchar(5) [unique, not null, note: 'FR, BE, CH...']
+  indicatif varchar(5) [not null, note: '+33, +32, +41...']
+  libelle nvarchar(100) [not null, note: 'France, Belgique...']
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Indicatifs téléphoniques par pays'
+}
+
+Table TEL_REGION {
+  id int [pk, increment]
+  indicatif_id int [ref: > TEL_INDICATIF.id, not null]
+  code varchar(10) [not null, note: 'IDF, PACA, NOR...']
+  libelle nvarchar(100) [not null, note: 'Île-de-France, PACA...']
+  prefixe varchar(5) [note: '01, 04, 03...']
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  indexes {
+    (indicatif_id, code) [unique]
+  }
+
+  Note: 'Régions géographiques pour SDA'
+}
+
+Table TEL_OPERATEUR {
+  id int [pk, increment]
+  code varchar(20) [unique, not null, note: 'BOUYGUES, TELNYX...']
+  nom nvarchar(100) [not null]
+  type varchar(20) [note: 'VOIP, TRADITIONNEL, HYBRIDE']
+  contact nvarchar(255)
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Opérateurs télécom fournisseurs de SDA'
+}
+
+Table TEL_TYPE_DID {
+  id int [pk, increment]
+  code varchar(20) [unique, not null]
+  libelle nvarchar(100) [not null, note: 'NPV, Géographique, Mobile...']
+  description nvarchar(500)
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Types de numéros DID'
+}
+
+Table TEL_EQUIPEMENT {
+  id int [pk, increment]
+  code varchar(20) [unique, not null]
+  nom nvarchar(100) [not null, note: 'SBC, Centrex, T2, Astra...']
+  type varchar(50) [note: 'SBC, PBX, GATEWAY...']
+  ip_address varchar(45)
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Équipements de routage téléphonique'
+}
+
+Table TEL_STATUT_DID {
+  id int [pk, increment]
+  code varchar(20) [unique, not null, note: 'COMMANDE, DISPONIBLE, AFFECTE, UTILISE, RESILIE']
+  libelle nvarchar(100) [not null]
+  description nvarchar(500)
+  ordre int [default: 0]
+  couleur varchar(7) [note: '#FF0000']
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Statuts possibles pour un DID'
+}
+
+Table TEL_CLOUD {
+  id int [pk, increment]
+  code varchar(20) [unique, not null]
+  nom nvarchar(100) [not null]
+  routage nvarchar(255)
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Environnements cloud/infrastructure'
+}
+
+Table TEL_CLIENT {
+  id int [pk, increment]
+  code varchar(20) [unique, not null]
+  nom nvarchar(200) [not null]
+  siret varchar(14)
+  adresse nvarchar(500)
+  contact_nom nvarchar(100)
+  contact_email nvarchar(255)
+  contact_tel varchar(20)
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Clients Fimainfo'
+}
+
+Table TEL_GROUPEMENT {
+  id int [pk, increment]
+  client_id int [ref: > TEL_CLIENT.id, not null]
+  code varchar(50) [not null]
+  libelle nvarchar(200) [not null, note: 'Administration, Production...']
+  description nvarchar(500)
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  indexes {
+    (client_id, code) [unique]
+  }
+
+  Note: 'Sous-entités / groupements par client'
+}
+
+Table TEL_CAMPAIGN {
+  id int [pk, increment]
+  client_id int [ref: > TEL_CLIENT.id, not null]
+  code varchar(50) [not null]
+  nom nvarchar(200) [not null]
+  description nvarchar(500)
+  hermes_id varchar(50) [note: 'ID dans Hermes']
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Campagnes Hermes'
+}
+
+// =============================================================================
+// TABLES PRINCIPALES
+// =============================================================================
+
+Table TEL_DID {
+  id int [pk, increment]
+
+  // Numéro
+  indicatif_id int [ref: > TEL_INDICATIF.id, not null]
+  did varchar(20) [not null, note: 'Numéro 9 chiffres']
+  did_format_e164 varchar(20) [note: '+33612345678']
+
+  // Classification
+  operateur_id int [ref: > TEL_OPERATEUR.id, not null]
+  type_id int [ref: > TEL_TYPE_DID.id, not null]
+  region_id int [ref: > TEL_REGION.id]
+  equipement_id int [ref: > TEL_EQUIPEMENT.id]
+
+  // Affectation
+  client_id int [ref: > TEL_CLIENT.id]
+  groupement_id int [ref: > TEL_GROUPEMENT.id]
+  cloud_id int [ref: > TEL_CLOUD.id]
+
+  // Statut
+  statut_id int [ref: > TEL_STATUT_DID.id, not null]
+
+  // Informations
+  description nvarchar(500)
+  reference_externe varchar(100) [note: 'Référence opérateur']
+  date_acquisition date
+  date_activation date
+  date_resiliation date
+  cout_mensuel decimal(10,2)
+  notes nvarchar(max)
+
+  // Métadonnées
+  actif bit [default: 1]
+  created_by nvarchar(100)
+  modified_by nvarchar(100)
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  indexes {
+    (indicatif_id, did) [unique, name: 'UQ_TEL_DID_indicatif_did']
+    did [name: 'IX_TEL_DID_did']
+    did_format_e164 [name: 'IX_TEL_DID_e164']
+    client_id [name: 'IX_TEL_DID_client']
+    statut_id [name: 'IX_TEL_DID_statut']
+    operateur_id [name: 'IX_TEL_DID_operateur']
+    region_id [name: 'IX_TEL_DID_region']
+    (client_id, statut_id) [name: 'IX_TEL_DID_client_statut']
+  }
+
+  Note: 'Table principale - Inventaire de tous les numéros DID'
+}
+
+Table TEL_DID_CONFIG {
+  id int [pk, increment]
+  code varchar(50) [unique, not null]
+  nom nvarchar(200) [not null]
+  description nvarchar(500)
+  config nvarchar(max) [note: 'JSON configuration']
+  actif bit [default: 1]
+  created_by nvarchar(100)
+  modified_by nvarchar(100)
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  Note: 'Configuration JSON pour personnalisation des DID'
+}
+
+Table TEL_DID_VIRTUAL {
+  id int [pk, increment]
+  did_id int [ref: > TEL_DID.id, not null]
+  campaign_id int [ref: > TEL_CAMPAIGN.id, not null]
+  config_id int [ref: > TEL_DID_CONFIG.id]
+  alias nvarchar(100)
+  priorite int [default: 1]
+  date_debut date [not null, default: `GETDATE()`]
+  date_fin date
+  entrant bit [default: 1]
+  sortant bit [default: 1]
+  actif bit [default: 1]
+  created_by nvarchar(100)
+  modified_by nvarchar(100)
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  indexes {
+    did_id [name: 'IX_TEL_DID_VIRTUAL_did']
+    campaign_id [name: 'IX_TEL_DID_VIRTUAL_campaign']
+  }
+
+  Note: 'Affectation des DID aux campagnes Hermes'
+}
+
+Table TEL_DID_HISTORIQUE {
+  id bigint [pk, increment]
+  did_id int [not null]
+  action varchar(20) [not null, note: 'INSERT, UPDATE, DELETE']
+  champ_modifie varchar(100)
+  ancienne_valeur nvarchar(500)
+  nouvelle_valeur nvarchar(500)
+  utilisateur nvarchar(100)
+  date_action datetime [default: `GETDATE()`]
+
+  indexes {
+    (did_id, date_action) [name: 'IX_TEL_DID_HISTORIQUE_did']
+    date_action [name: 'IX_TEL_DID_HISTORIQUE_date']
+  }
+
+  Note: 'Historique des changements (audit)'
+}
+
+// =============================================================================
+// MODULE COMMANDE
+// =============================================================================
+
+Table TEL_STATUT_COMMANDE {
+  id int [pk, increment]
+  code varchar(20) [unique, not null, note: 'BROUILLON, SOUMISE, VALIDEE, EN_COURS, LIVREE, REJETEE, ANNULEE']
+  libelle nvarchar(100) [not null]
+  description nvarchar(500)
+  ordre int [default: 0]
+  couleur varchar(7)
+  actif bit [default: 1]
+  date_creation datetime [default: `GETDATE()`]
+
+  Note: 'Statuts du workflow de commande'
+}
+
+Table TEL_DID_COMMANDE {
+  id int [pk, increment]
+  reference varchar(20) [unique, not null, note: 'CMD-2026-00001']
+
+  // Demandeur
+  client_id int [ref: > TEL_CLIENT.id, not null]
+  groupement_id int [ref: > TEL_GROUPEMENT.id]
+  demandeur_nom nvarchar(100) [not null]
+  demandeur_email nvarchar(255) [not null]
+  demandeur_tel varchar(20)
+
+  // Détails commande
+  operateur_id int [ref: > TEL_OPERATEUR.id]
+  type_did_id int [ref: > TEL_TYPE_DID.id, not null]
+  region_id int [ref: > TEL_REGION.id]
+  quantite int [not null, default: 1]
+  prefixe_souhaite varchar(10)
+  motif nvarchar(500)
+
+  // Urgence
+  urgence varchar(10) [not null, default: 'NORMALE', note: 'BASSE, NORMALE, HAUTE, URGENTE']
+  date_souhaitee date
+
+  // Statut
+  statut_id int [ref: > TEL_STATUT_COMMANDE.id, not null]
+
+  // Traitement
+  valideur_nom nvarchar(100)
+  date_validation datetime
+  commentaire_validation nvarchar(500)
+  reference_operateur varchar(100)
+  date_livraison date
+
+  // Métadonnées
+  actif bit [default: 1]
+  created_by nvarchar(100)
+  modified_by nvarchar(100)
+  date_creation datetime [default: `GETDATE()`]
+  date_modification datetime
+
+  indexes {
+    reference [name: 'IX_TEL_DID_COMMANDE_reference']
+    client_id [name: 'IX_TEL_DID_COMMANDE_client']
+    statut_id [name: 'IX_TEL_DID_COMMANDE_statut']
+    (urgence, date_souhaitee) [name: 'IX_TEL_DID_COMMANDE_urgence']
+    date_creation [name: 'IX_TEL_DID_COMMANDE_date']
+  }
+
+  Note: 'Demandes de commande de numéros SDA'
+}
+
+Table TEL_DID_COMMANDE_LIGNE {
+  id int [pk, increment]
+  commande_id int [ref: > TEL_DID_COMMANDE.id, not null]
+  did_id int [ref: > TEL_DID.id, not null]
+  date_creation datetime [default: `GETDATE()`]
+
+  indexes {
+    (commande_id, did_id) [unique]
+    commande_id [name: 'IX_TEL_DID_COMMANDE_LIGNE_commande']
+  }
+
+  Note: 'Numéros livrés pour une commande'
+}
+
+Table TEL_DID_COMMANDE_COMMENTAIRE {
+  id int [pk, increment]
+  commande_id int [ref: > TEL_DID_COMMANDE.id, not null]
+  auteur nvarchar(100) [not null]
+  commentaire nvarchar(max) [not null]
+  type varchar(20) [not null, default: 'INFO', note: 'INFO, VALIDATION, REJET, LIVRAISON']
+  date_creation datetime [default: `GETDATE()`]
+
+  indexes {
+    (commande_id, date_creation) [name: 'IX_TEL_DID_COMMANDE_COMMENTAIRE_commande']
+  }
+
+  Note: 'Historique des commentaires sur une commande'
+}
+
+// =============================================================================
+// GROUPES DE TABLES
+// =============================================================================
+
+TableGroup reference_tables {
+  TEL_INDICATIF
+  TEL_REGION
+  TEL_OPERATEUR
+  TEL_TYPE_DID
+  TEL_EQUIPEMENT
+  TEL_STATUT_DID
+  TEL_CLOUD
+  TEL_CLIENT
+  TEL_GROUPEMENT
+  TEL_CAMPAIGN
+}
+
+TableGroup main_tables {
+  TEL_DID
+  TEL_DID_CONFIG
+  TEL_DID_VIRTUAL
+  TEL_DID_HISTORIQUE
+}
+
+TableGroup commande_tables {
+  TEL_STATUT_COMMANDE
+  TEL_DID_COMMANDE
+  TEL_DID_COMMANDE_LIGNE
+  TEL_DID_COMMANDE_COMMENTAIRE
+}

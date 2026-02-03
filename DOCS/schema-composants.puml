@@ -1,0 +1,61 @@
+@startuml schema-composants
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle uml2
+
+title Diagramme des Composants - API Telephony
+
+package "Frontend - Extranet" {
+    component [Interface\nAdministration] as UI_Admin
+    component [Interface\nCommande SDA] as UI_Commande
+    component [Dashboard\nStatistiques] as UI_Dashboard
+}
+
+package "Backend - API TELEPHONY" {
+    component [Controllers] as Controllers {
+        portin "REST API" as RestAPI
+    }
+    component [Services] as Services
+    component [Repositories] as Repos
+    component [Auth Module] as Auth
+}
+
+package "Data Layer" {
+    database "SQL Server" as DB {
+        frame "Tables" {
+            [TEL_DID]
+            [TEL_DID_VIRTUAL]
+            [TEL_DID_CONFIG]
+            [TEL_DID_COMMANDE]
+            [Tables Référence]
+        }
+        frame "Vues" {
+            [V_TEL_DID_COMPLET]
+            [V_TEL_COMMANDE_COMPLET]
+            [V_TEL_STATISTIQUES]
+        }
+    }
+}
+
+package "External Systems" {
+    component [Hermes\nCall Center] as Hermes
+    component [Email\nNotifications] as Email
+}
+
+' Connexions Frontend -> API
+UI_Admin --> RestAPI : HTTP/JSON
+UI_Commande --> RestAPI : HTTP/JSON
+UI_Dashboard --> RestAPI : HTTP/JSON
+
+' Connexions internes API
+RestAPI --> Auth : Authentification
+Auth --> Controllers
+Controllers --> Services
+Services --> Repos
+Repos --> DB
+
+' Connexions externes
+Services --> Hermes : Configuration\ncampagnes
+Services --> Email : Notifications\ncommandes
+
+@enduml

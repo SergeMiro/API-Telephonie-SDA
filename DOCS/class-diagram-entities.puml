@@ -1,0 +1,230 @@
+@startuml class-diagram-entities
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classAttributeIconSize 0
+
+title Diagramme de Classes - Entités Métier
+
+' === ENUMS ===
+enum StatutDID {
+    COMMANDE
+    DISPONIBLE
+    AFFECTE
+    UTILISE
+    RESILIE
+}
+
+enum StatutCommande {
+    BROUILLON
+    SOUMISE
+    VALIDEE
+    EN_COURS
+    LIVREE
+    REJETEE
+    ANNULEE
+}
+
+enum Urgence {
+    BASSE
+    NORMALE
+    HAUTE
+    URGENTE
+}
+
+' === CLASSES DE RÉFÉRENCE ===
+class Indicatif {
+    +id: int
+    +code: string
+    +indicatif: string
+    +libelle: string
+}
+
+class Region {
+    +id: int
+    +code: string
+    +libelle: string
+    +prefixe: string
+}
+
+class Operateur {
+    +id: int
+    +code: string
+    +nom: string
+    +type: string
+}
+
+class TypeDID {
+    +id: int
+    +code: string
+    +libelle: string
+}
+
+class Equipement {
+    +id: int
+    +code: string
+    +nom: string
+    +type: string
+}
+
+class Cloud {
+    +id: int
+    +code: string
+    +nom: string
+    +routage: string
+}
+
+' === CLASSES CLIENT ===
+class Client {
+    +id: int
+    +code: string
+    +nom: string
+    +siret: string
+    +contact_nom: string
+    +contact_email: string
+    --
+    +getDIDs(): DID[]
+    +getGroupements(): Groupement[]
+    +getCampagnes(): Campaign[]
+}
+
+class Groupement {
+    +id: int
+    +code: string
+    +libelle: string
+}
+
+class Campaign {
+    +id: int
+    +code: string
+    +nom: string
+    +hermes_id: string
+    --
+    +getDIDVirtuals(): DIDVirtual[]
+}
+
+' === CLASSES PRINCIPALES ===
+class DID {
+    +id: int
+    +did: string
+    +did_format_e164: string
+    +description: string
+    +reference_externe: string
+    +date_acquisition: date
+    +date_activation: date
+    +cout_mensuel: decimal
+    --
+    +getStatut(): StatutDID
+    +affecter(client: Client): void
+    +changerStatut(statut: StatutDID): void
+    +getHistorique(): Historique[]
+}
+
+class DIDConfig {
+    +id: int
+    +code: string
+    +nom: string
+    +config: JSON
+    --
+    +getNomSite(): string
+    +getCouleur(): string
+    +getHoraires(): JSON
+}
+
+class DIDVirtual {
+    +id: int
+    +alias: string
+    +priorite: int
+    +date_debut: date
+    +date_fin: date
+    +entrant: bool
+    +sortant: bool
+    --
+    +isActif(): bool
+    +isCurrent(): bool
+}
+
+class Historique {
+    +id: bigint
+    +action: string
+    +champ_modifie: string
+    +ancienne_valeur: string
+    +nouvelle_valeur: string
+    +utilisateur: string
+    +date_action: datetime
+}
+
+' === CLASSES COMMANDE ===
+class Commande {
+    +id: int
+    +reference: string
+    +demandeur_nom: string
+    +demandeur_email: string
+    +quantite: int
+    +prefixe_souhaite: string
+    +motif: string
+    +date_souhaitee: date
+    +valideur_nom: string
+    +date_validation: datetime
+    +reference_operateur: string
+    --
+    +soumettre(): void
+    +valider(valideur: string): void
+    +rejeter(motif: string): void
+    +livrer(dids: DID[]): void
+}
+
+class CommandeLigne {
+    +id: int
+    +date_creation: datetime
+}
+
+class CommandeCommentaire {
+    +id: int
+    +auteur: string
+    +commentaire: string
+    +type: string
+    +date_creation: datetime
+}
+
+' === RELATIONS ===
+Indicatif "1" --o "0..*" Region
+Indicatif "1" --o "0..*" DID
+
+Region "0..1" --o "0..*" DID
+
+Operateur "1" --o "0..*" DID
+
+TypeDID "1" --o "0..*" DID
+TypeDID "1" --o "0..*" Commande
+
+Equipement "0..1" --o "0..*" DID
+
+Cloud "0..1" --o "0..*" DID
+
+Client "1" --o "0..*" Groupement
+Client "1" --o "0..*" Campaign
+Client "0..1" --o "0..*" DID
+Client "1" --o "0..*" Commande
+
+Groupement "0..1" --o "0..*" DID
+Groupement "0..1" --o "0..*" Commande
+
+Campaign "1" --o "0..*" DIDVirtual
+
+DID "1" --o "0..*" DIDVirtual
+DID "1" --o "0..*" Historique
+DID "1" --o "0..*" CommandeLigne
+
+DIDConfig "0..1" --o "0..*" DIDVirtual
+
+DID -- StatutDID
+
+Commande "1" --o "0..*" CommandeLigne
+Commande "1" --o "0..*" CommandeCommentaire
+Commande -- StatutCommande
+Commande -- Urgence
+
+Region "0..1" --o "0..*" Commande
+Operateur "0..1" --o "0..*" Commande
+
+@enduml

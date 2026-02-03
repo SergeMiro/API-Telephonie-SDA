@@ -1,0 +1,56 @@
+@startuml schema-architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+
+title Gestion Centralisée des DID - Architecture Globale
+
+' === ACTEURS ===
+actor "Administrateur\nFimainfo" as Admin
+actor "Client" as Client
+actor "Opérateur\nTélécom" as Operator
+
+' === COMPOSANTS ===
+package "Interface Extranet" {
+    [Module Admin\nTelephony] as ModuleAdmin
+    [Module Commande\nSDA] as ModuleCommande
+}
+
+package "API TELEPHONY" {
+    [API REST\nCRUD] as API
+}
+
+database "FIMLONSQL2" {
+    frame "HN_FIMAINFO_CONFIG" {
+        [Tables DID] as TablesDID
+        [Tables Commande] as TablesCommande
+        [Vues API] as Vues
+    }
+}
+
+cloud "Système Hermes" {
+    [Configuration\nCampagnes] as Hermes
+}
+
+cloud "Opérateurs" {
+    [Bouygues] as Bouygues
+    [Telnyx] as Telnyx
+    [Orange] as Orange
+}
+
+' === FLUX ===
+Admin --> ModuleAdmin : Gère les DID
+Client --> ModuleCommande : Demande de SDA
+ModuleAdmin --> API
+ModuleCommande --> API
+API --> TablesDID : CRUD
+API --> TablesCommande : CRUD
+API --> Vues : SELECT
+API --> Hermes : Configuration\nautomatique
+Operator --> TablesCommande : Livraison\nnuméros
+
+Bouygues ..> TablesDID : Fournit SDA
+Telnyx ..> TablesDID : Fournit SDA
+Orange ..> TablesDID : Fournit SDA
+
+@enduml

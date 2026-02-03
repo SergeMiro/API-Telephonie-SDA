@@ -1,0 +1,73 @@
+@startuml sequence-commande-sda
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Séquence - Demande de Commande SDA
+
+actor "Client" as Client
+participant "Interface\nCommande" as UI
+participant "API\nTelephony" as API
+database "Base de\nDonnées" as DB
+actor "Admin\nFimainfo" as Admin
+participant "Opérateur\nTélécom" as Operator
+
+== Création de la demande ==
+Client -> UI : Accède au formulaire
+UI -> API : GET /api/lookup\n(types, régions)
+API -> DB : SELECT référentiels
+DB --> API : Données
+API --> UI : Listes déroulantes
+
+Client -> UI : Remplit formulaire\n(type, région, quantité)
+UI -> API : POST /api/commandes
+API -> DB : INSERT TEL_DID_COMMANDE\n(statut: BROUILLON)
+DB --> API : Référence CMD-xxxx
+API --> UI : Confirmation
+UI --> Client : Affiche référence
+
+== Soumission ==
+Client -> UI : Soumet la demande
+UI -> API : PATCH /api/commandes/{id}\n(statut: SOUMISE)
+API -> DB : UPDATE statut
+API -> Admin : Notification email
+API --> UI : Confirmé
+
+== Validation ==
+Admin -> UI : Consulte demande
+UI -> API : GET /api/commandes/{id}
+API -> DB : SELECT V_TEL_COMMANDE_COMPLET
+DB --> API : Détails complets
+API --> UI : Affiche demande
+
+Admin -> UI : Valide la demande
+UI -> API : PATCH /api/commandes/{id}\n(statut: VALIDEE)
+API -> DB : UPDATE + INSERT commentaire
+API --> UI : Confirmé
+API -> Client : Notification email
+
+== Commande opérateur ==
+Admin -> Operator : Passe commande\n(hors système)
+Operator --> Admin : Confirmation + délai
+
+Admin -> UI : Met à jour statut
+UI -> API : PATCH /api/commandes/{id}\n(statut: EN_COURS, ref_operateur)
+API -> DB : UPDATE
+API --> UI : Confirmé
+
+== Livraison ==
+Operator --> Admin : Livre les numéros
+
+Admin -> UI : Saisit les DID livrés
+loop Pour chaque DID
+    UI -> API : POST /api/did
+    API -> DB : INSERT TEL_DID\n(statut: COMMANDE)
+    API -> DB : INSERT TEL_DID_COMMANDE_LIGNE
+end
+
+Admin -> UI : Marque comme livré
+UI -> API : PATCH /api/commandes/{id}\n(statut: LIVREE)
+API -> DB : UPDATE DID\n(statut: DISPONIBLE)
+API -> Client : Notification email
+API --> UI : Terminé
+
+@enduml
