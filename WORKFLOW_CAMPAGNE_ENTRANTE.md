@@ -89,9 +89,9 @@ flowchart TD
 
 | # | Question                                                                                     | Options possibles                                                                                                                                   |
 | - | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 | **Comment l'agent doit trouver l'appelant ?**                                          | a) Recherche auto par N° téléphone de l'appelant (ANI) dans toutes les campagnes `<br>`b) Recherche par département `<br>`c) Autre critère |
+| 1 | **Comment l'agent doit trouver l'appelant ?**                                          | a) Recherche auto par N° téléphone de l'appelant (ANI) dans toutes les campagnes <br>b) Recherche par département <br>c) Autre critère |
 | 2 | **Si le N° est trouvé dans 1 seule campagne** → remontée automatique de la fiche ? | Oui / Non                                                                                                                                           |
 | 3 | **Si le N° est trouvé dans plusieurs campagnes** → l'agent choisit manuellement ?   | Oui / Non                                                                                                                                           |
-| 4 | **Si le N° n'est pas trouvé** → que fait l'agent ?                                  | a) On remonte la fiche client dans la campagne entrante ? `<br>`b) On crée une nouvelle fiche dans la campagne sortante LIVRAISON ? `<br>`c) Autres options ?                                   |
+| 4 | **Si le N° n'est pas trouvé** → que fait l'agent ?                                  | a) On remonte la fiche client dans la campagne entrante ? <br>b) On crée une nouvelle fiche dans la campagne sortante LIVRAISON ? <br>c) Autres options ?                                   |
 | 5 | **Quelles campagnes sortantes doivent être disponibles pour la recherche ?**          | Campagne LIVRAISON, autres ?                                                                                                                        |
 
